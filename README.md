@@ -7,7 +7,8 @@ Each handler consists of three steps:
 3. Marshal and write the result to the response.
 If a handler becomes much more complicated than this, then move req & resp handling to middleware, business logic further down the stack.
 
-The order of building / operations in this project:
+## The order of building / operations in this project:
+### Chapter 1:
 1. We defined the model of a Log and access methods. 
 2. We defined an Http server, a method to create it, routes, and handler's names and signatures.
 3. Request and response structs (since we're receiving requests and sending responses, that have to be marshalled/unmarshalled.)

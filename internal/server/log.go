@@ -15,7 +15,7 @@ type Log struct {
 	records []Record
 }
 
-var ErrOffsetNotFound = fmt.Errorf("offstet not found")
+var ErrOffsetNotFound = fmt.Errorf("offset not found")
 
 func NewLog() *Log {
 	return &Log{}
