@@ -1,7 +1,6 @@
 package log
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"path"
@@ -13,6 +12,7 @@ import (
 	api "github.com/innazh/proglog/api/v1"
 )
 
+// Log implements CommitLog interface
 type Log struct {
 	mu sync.RWMutex //to grant access to reads when 'writes' are not holding the lock
 
@@ -105,7 +105,7 @@ func (l *Log) Read(off uint64) (*api.Record, error) {
 	}
 
 	if s == nil || s.nextOffset <= off {
-		return nil, fmt.Errorf("offset out of range: %d", off)
+		return nil, api.ErrOffsetOutOfRange{Offset: off}
 	}
 	return s.Read(off)
 }

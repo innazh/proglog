@@ -31,7 +31,8 @@ const (
 type LogClient interface {
 	Produce(ctx context.Context, in *ProduceRequest, opts ...grpc.CallOption) (*ProduceResponse, error)
 	Consume(ctx context.Context, in *ConsumeRequest, opts ...grpc.CallOption) (*ConsumeResponse, error)
-	ConsumeStream(ctx context.Context, opts ...grpc.CallOption) (Log_ConsumeStreamClient, error)
+	// rpc ConsumeStream(stream ConsumeRequest) returns (stream ConsumeResponse) {} //server-side stream sent back to client
+	ConsumeStream(ctx context.Context, in *ConsumeRequest, opts ...grpc.CallOption) (Log_ConsumeStreamClient, error)
 	ProduceStream(ctx context.Context, opts ...grpc.CallOption) (Log_ProduceStreamClient, error)
 }
 
@@ -61,27 +62,28 @@ func (c *logClient) Consume(ctx context.Context, in *ConsumeRequest, opts ...grp
 	return out, nil
 }
 
-func (c *logClient) ConsumeStream(ctx context.Context, opts ...grpc.CallOption) (Log_ConsumeStreamClient, error) {
+func (c *logClient) ConsumeStream(ctx context.Context, in *ConsumeRequest, opts ...grpc.CallOption) (Log_ConsumeStreamClient, error) {
 	stream, err := c.cc.NewStream(ctx, &Log_ServiceDesc.Streams[0], Log_ConsumeStream_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
 	x := &logConsumeStreamClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
 	return x, nil
 }
 
 type Log_ConsumeStreamClient interface {
-	Send(*ConsumeRequest) error
 	Recv() (*ConsumeResponse, error)
 	grpc.ClientStream
 }
 
 type logConsumeStreamClient struct {
 	grpc.ClientStream
-}
-
-func (x *logConsumeStreamClient) Send(m *ConsumeRequest) error {
-	return x.ClientStream.SendMsg(m)
 }
 
 func (x *logConsumeStreamClient) Recv() (*ConsumeResponse, error) {
@@ -129,7 +131,8 @@ func (x *logProduceStreamClient) Recv() (*ProduceResponse, error) {
 type LogServer interface {
 	Produce(context.Context, *ProduceRequest) (*ProduceResponse, error)
 	Consume(context.Context, *ConsumeRequest) (*ConsumeResponse, error)
-	ConsumeStream(Log_ConsumeStreamServer) error
+	// rpc ConsumeStream(stream ConsumeRequest) returns (stream ConsumeResponse) {} //server-side stream sent back to client
+	ConsumeStream(*ConsumeRequest, Log_ConsumeStreamServer) error
 	ProduceStream(Log_ProduceStreamServer) error
 	mustEmbedUnimplementedLogServer()
 }
@@ -144,7 +147,7 @@ func (UnimplementedLogServer) Produce(context.Context, *ProduceRequest) (*Produc
 func (UnimplementedLogServer) Consume(context.Context, *ConsumeRequest) (*ConsumeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Consume not implemented")
 }
-func (UnimplementedLogServer) ConsumeStream(Log_ConsumeStreamServer) error {
+func (UnimplementedLogServer) ConsumeStream(*ConsumeRequest, Log_ConsumeStreamServer) error {
 	return status.Errorf(codes.Unimplemented, "method ConsumeStream not implemented")
 }
 func (UnimplementedLogServer) ProduceStream(Log_ProduceStreamServer) error {
@@ -200,12 +203,15 @@ func _Log_Consume_Handler(srv interface{}, ctx context.Context, dec func(interfa
 }
 
 func _Log_ConsumeStream_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(LogServer).ConsumeStream(&logConsumeStreamServer{stream})
+	m := new(ConsumeRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(LogServer).ConsumeStream(m, &logConsumeStreamServer{stream})
 }
 
 type Log_ConsumeStreamServer interface {
 	Send(*ConsumeResponse) error
-	Recv() (*ConsumeRequest, error)
 	grpc.ServerStream
 }
 
@@ -215,14 +221,6 @@ type logConsumeStreamServer struct {
 
 func (x *logConsumeStreamServer) Send(m *ConsumeResponse) error {
 	return x.ServerStream.SendMsg(m)
-}
-
-func (x *logConsumeStreamServer) Recv() (*ConsumeRequest, error) {
-	m := new(ConsumeRequest)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
 }
 
 func _Log_ProduceStream_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -272,7 +270,6 @@ var Log_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "ConsumeStream",
 			Handler:       _Log_ConsumeStream_Handler,
 			ServerStreams: true,
-			ClientStreams: true,
 		},
 		{
 			StreamName:    "ProduceStream",

@@ -13,6 +13,15 @@ Protobuf pros:
 - fast serialization
 - backward compatibility (new code can read old data structures)
 
+The magic internal packages are used to restrict access to certain packages within a project. Packages inside an internal directory can only be imported by code within the parent directory or its subdirectories. This helps in encapsulating code and preventing it from being used outside its intended scope.
+
+Types of gRPC Streaming RPCs:
+Unary: Single request and single response.
+Server streaming: Single request and multiple responses (streamed from server to client).
+Client streaming: Multiple requests (streamed from client to server) and single response.
+Bidirectional streaming: Both client and server send a sequence of messages using a read-write stream.
+note: Rcv() is a blocking call, waits until a msg is received or the stream is closed.
+
 ## The order of building / operations in this project:
 ### Chapter 1:
 1. We defined the model of a Log and access methods. 
@@ -33,3 +42,8 @@ learning opportunity: can write a protobuf extensions/plugins
 ### Chapter 4: Add gRPC service
 1. Add grpc Log service, declare methods, response and request objects
 2. Compile the code and see it generate log_grpc.pb.go
+3. Implement a grpc server that will implement the Log Service and define its methods
+4. Error handling
+5. Swap out the concrete Log structure / object our server depends on to an interface
+6. Create a gRPC server and register it (NewGRPCServer)
+7. Tests!
