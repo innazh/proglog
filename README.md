@@ -23,3 +23,10 @@ Protobuf pros:
 ### Chapter 2: Protocol Buffers
 1. Define protos & make sure it compiles
 learning opportunity: can write a protobuf extensions/plugins
+### Chapter 3: Write a Log Package
+1. Create an store for our log files (a wrapper around a 'file' in our case)
+2. Code up the read and write methods to persist our records
+3. Test file
+4. Write out the index struct and logic, test file
+5. Segment logic (so that we can split our log into segmentes when one gets too big), test file
+6. Code the Log + test
