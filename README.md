@@ -30,3 +30,6 @@ learning opportunity: can write a protobuf extensions/plugins
 4. Write out the index struct and logic, test file
 5. Segment logic (so that we can split our log into segmentes when one gets too big), test file
 6. Code the Log + test
+### Chapter 4: Add gRPC service
+1. Add grpc Log service, declare methods, response and request objects
+2. Compile the code and see it generate log_grpc.pb.go
