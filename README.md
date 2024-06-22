@@ -22,6 +22,18 @@ Client streaming: Multiple requests (streamed from client to server) and single 
 Bidirectional streaming: Both client and server send a sequence of messages using a read-write stream.
 note: Rcv() is a blocking call, waits until a msg is received or the stream is closed.
 
+Fav quote about securing an application: "Whenever I'm building a service, I think about what it'd be like if the data I'm trying to protect was publicly posted all over planet. Picturing this gives me the motivation to make sure that sort of thing doesn't happen to me, ..."
+
+Secrutiy of distrtibuted services in three steps:
+1. Encrypt the transmitted/in-flight data against MITM (man in the middle)
+    - TLS - successor to SSL
+    - Typically web services user one-way auth and only auth the server through the handshake that's initiated when the client and server connect. It's up to the app to auth the user
+    - Certs for internal distributed systems don't need to come from a third party, one can operate a CA (cert authority) themself
+2. Authentication to identify clients (who is who)
+    - There's also a two-way auth or TLS mutual auth, whcih is used in machine-to-machine communication, or distributed systems. Both client and server use a cert to auth itself
+3. Authorization to assign the right permissions to the ID-ed clients.
+    - when you have a shared resource with varying levels of ownership (read/write permissions)
+
 ## The order of building / operations in this project:
 ### Chapter 1:
 1. We defined the model of a Log and access methods. 
@@ -47,3 +59,9 @@ learning opportunity: can write a protobuf extensions/plugins
 5. Swap out the concrete Log structure / object our server depends on to an interface
 6. Create a gRPC server and register it (NewGRPCServer)
 7. Tests!
+### Chapter 5: Security
+1. Create a cert issuer authority using CloudFlare's open source lib
+2. Define the configs and write out the makefile cmds to generate certs
+3. Add a /config dir to take care of retrieving the cert files and parsing them
+4. Add grpc opts to our server so it can handle a creds opt to handle tls conns
+5. 
