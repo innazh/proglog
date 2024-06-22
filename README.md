@@ -33,6 +33,8 @@ Secrutiy of distrtibuted services in three steps:
     - There's also a two-way auth or TLS mutual auth, whcih is used in machine-to-machine communication, or distributed systems. Both client and server use a cert to auth itself
 3. Authorization to assign the right permissions to the ID-ed clients.
     - when you have a shared resource with varying levels of ownership (read/write permissions)
+    - ACL - access control list in quite common. It's a essentially a table with rules on what someone can or can't do.
+    - in ACL permissions are attached directly to resources, in RBAC - to roles
 
 ## The order of building / operations in this project:
 ### Chapter 1:
@@ -64,4 +66,6 @@ learning opportunity: can write a protobuf extensions/plugins
 2. Define the configs and write out the makefile cmds to generate certs
 3. Add a /config dir to take care of retrieving the cert files and parsing them
 4. Add grpc opts to our server so it can handle a creds opt to handle tls conns
-5. 
+5. Add ACL by adding policy and model, use casbin pkg to enforce it
+6. Add an interceptor / middleware to our grpc server to extract cert's cn for the server to check
+7. In the test cases / when instantiating the server, we now define the Authorizer interface and voila!

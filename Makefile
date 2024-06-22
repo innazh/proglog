@@ -1,4 +1,4 @@
-CONFIG_PATH=${HOME}/projects/.proglog/
+CONFIG_PATH=${HOME}/projects/.proglog
 
 .PHONY: init
 init:
@@ -41,5 +41,5 @@ proto:
 	protoc api/v1/*.proto --go_out=. --go_opt=paths=source_relative --proto_path=.
 
 .PHONY: test
-test:
-	go test ./...
+test: $(CONFIG_PATH)/policy.csv $(CONFIG_PATH)/model.conf
+	go test -race ./...

@@ -10,6 +10,8 @@ require (
 )
 
 require (
+	github.com/casbin/casbin/v2 v2.97.0 // indirect
+	github.com/casbin/govaluate v1.1.0 // indirect
 	github.com/cloudflare/cfssl v1.6.5 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-sql-driver/mysql v1.7.1 // indirect
@@ -33,6 +35,7 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/tysonmote/gommap v0.0.3
 	gopkg.in/yaml.v3 v3.0.1 // indirect
