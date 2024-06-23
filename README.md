@@ -69,6 +69,15 @@ It can be a good practice to connect the logs to an event streamning platofrm li
 #### Traces
 - capture request lifecycles and let you track requests as they flow through your system. There are services that can provide a visual representation of where the request spent its time.
 
+### Service discovery notes:
+For clients to reach a server, once we have more than one instance, we put a load balancer in front of it. The load balancers knows the address of each node, and its status. It redirects the client to the correct intance. It's fine to use them but it has its own trade offs like being a SPOF, introducing new cost, maintenance, and possibly latency. 
+For server-to-server communication, or for the internal services to comminicate, we don't really need a trust boundary since the communication is internal. We still, however, need to discover other intances and services in the system to talk to. Service discovery keeps track of the server instances, their IP, ports, their health, and deregesters them if they go offline/updates their status.
+Using service-discovery service transfers the burden from you to the users, which is honestly not a big deal if that's done for an in-org service.
+Now, however, it's possible to embed the service discovery into your own service.
+This is useful, so that once a new node goes online, it can replicate the data from the other nodes, whcih makes the service more resilient.
+Pull-based replication - periodically poll the data source to check if there's new data to consume (good in log and msg systems when consumers and work loads can differ e.g. one runs continuously, the other - every 24h)
+Push-based replication - the data source pushes the data to its replicas
+
 
 ## The order of building / operations in this project:
 ### Chapter 1:
@@ -109,3 +118,9 @@ learning opportunity: can write a protobuf extensions/plugins
 3. Wrap the created and configured log in the middleware
 4. Before instantiating the server, setup the files/output for tracing and metrics via LogExporter
 5. Close the files as a part of graceful shutdown
+### Chapter 7: Service discovery
+1. We're using a sef HashiCorp's library for tracking the state of our cluster and passing the info from one node to another
+2. Defined handler interface which can keep track of the members that leave or join
+3. Defined the functionality and config for the nodes inside the cluster: we're listening on join, leave, and fail events for the nodes
+4. Test file that implements the handler which just keeps track of the members (it doesn't have to be complicated at this point)
+5. Build replication
