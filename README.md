@@ -36,6 +36,40 @@ Secrutiy of distrtibuted services in three steps:
     - ACL - access control list in quite common. It's a essentially a table with rules on what someone can or can't do.
     - in ACL permissions are attached directly to resources, in RBAC - to roles
 
+### Observability notes:
+It gives us the chance to look into and fix unexpected problems.
+- the measure of how well we understand our system's internals
+
+Three types of telemetry data:
+#### Metrics
+- numeric data over time that help us define SLIs, SLOs, and SLAs
+Typically, as your system / business grows, you can reduce the resolution of the mentrics by making them less granular, agregating them, deleting irrelevant data after processing, that way you make it easier on the storage.
+##### Counters
+- Track the num of times something happened. Often used to get rate aka how many times per time interval something happened. Requests handled per second, error rate.
+##### Historgrams
+- Shows data distribution. Mainly used for measuring percentiles of request duration and sizes.
+##### Gauges
+- Track the curruent value of something. Useful for saturation-type metrics: host's disk storage, num of load balancers compared to provider's limit.
+
+What to measure (Google) ?
+##### Latency
+- the time it takes your service to process requests. Can be a signal to scale the system.
+##### Traffic  
+- the amount of demand on the service. This could be requests procezssed per second, num of concurrent users (for streaming), etc.
+##### Errors
+- request failure rate, esp. internal server errors.
+##### Saturation 
+- a measure of service's capacity.
+at the current ingress rate, how soon will you run out of hard drive space? how much memory the service uses compared to the available memory?
+
+#### Structured logs
+- a set of name value ordered pairs encoded in consistent schema and format. Enable to separate log acapture from transporting, persisting, and querying.
+It can be a good practice to connect the logs to an event streamning platofrm like Kafka.
+
+#### Traces
+- capture request lifecycles and let you track requests as they flow through your system. There are services that can provide a visual representation of where the request spent its time.
+
+
 ## The order of building / operations in this project:
 ### Chapter 1:
 1. We defined the model of a Log and access methods. 
@@ -69,3 +103,9 @@ learning opportunity: can write a protobuf extensions/plugins
 5. Add ACL by adding policy and model, use casbin pkg to enforce it
 6. Add an interceptor / middleware to our grpc server to extract cert's cn for the server to check
 7. In the test cases / when instantiating the server, we now define the Authorizer interface and voila!
+### Chapter 6: Observability
+1. Add libs for logging , metrics and tracing (OpenCensus, zap)
+2. Set it up at the start of the server
+3. Wrap the created and configured log in the middleware
+4. Before instantiating the server, setup the files/output for tracing and metrics via LogExporter
+5. Close the files as a part of graceful shutdown

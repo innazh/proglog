@@ -43,3 +43,7 @@ proto:
 .PHONY: test
 test: $(CONFIG_PATH)/policy.csv $(CONFIG_PATH)/model.conf
 	go test -race ./...
+
+.PHONY: test-debug
+test-debug:
+	cd internal/server && go test -v -debug=true
