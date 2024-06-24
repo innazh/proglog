@@ -1,12 +1,14 @@
 # Proglog
 Commit logs - append-only data structure, sequenced by time.
 
+### http Handlers notes:
 Each handler consists of three steps:
 1. Unmarshal the request's JSON body into a struct.
 2. Complete that endpoint's logic with the request, obtain a result.
 3. Marshal and write the result to the response.
 If a handler becomes much more complicated than this, then move req & resp handling to middleware, business logic further down the stack.
 
+### protobuf & grpc notes:
 Protobuf pros:
 - type safety
 - prevents schema violations
@@ -22,6 +24,7 @@ Client streaming: Multiple requests (streamed from client to server) and single 
 Bidirectional streaming: Both client and server send a sequence of messages using a read-write stream.
 note: Rcv() is a blocking call, waits until a msg is received or the stream is closed.
 
+### Security notes:
 Fav quote about securing an application: "Whenever I'm building a service, I think about what it'd be like if the data I'm trying to protect was publicly posted all over planet. Picturing this gives me the motivation to make sure that sort of thing doesn't happen to me, ..."
 
 Secrutiy of distrtibuted services in three steps:
@@ -123,4 +126,8 @@ learning opportunity: can write a protobuf extensions/plugins
 2. Defined handler interface which can keep track of the members that leave or join
 3. Defined the functionality and config for the nodes inside the cluster: we're listening on join, leave, and fail events for the nodes
 4. Test file that implements the handler which just keeps track of the members (it doesn't have to be complicated at this point)
-5. Build replication
+5. Build replication (implements the handler)
+6. Build an Agent that orchestrates and sets up the entire service instance, visual representation of the service is in the img below
+7. Test that sets up a cluster with 3 nodes, and verifies that the other servers will replicate the record we write to one of them
+Current replication implementation's problem: the servers replicate each other in a cycle. So server A will replicate server B's record, Server B will replicate server A, and server C will replicate server A and B, and server A and B will replicate server's C....
+![visual representation of some objects](agent_enc.png)

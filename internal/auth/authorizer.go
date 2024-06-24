@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// Authorizer is a wrapper class for casbin's enforcer that helps us to restrict access to the api
 type Authorizer struct {
 	enforcer *casbin.Enforcer
 }
