@@ -195,7 +195,7 @@ func (l *Log) Reader() io.Reader {
 	readers := make([]io.Reader, len(l.segments))
 	for i, segment := range l.segments {
 		//Why wrap with originReader?
-		////1. to satisfy io.Reader interface, 2. make sure we start reading from the origin of the store and read the entire file
+		//1. to satisfy io.Reader interface, 2. make sure we start reading from the origin of the store and read the entire file
 		readers[i] = &originReader{segment.store, 0}
 	}
 	return io.MultiReader(readers...) //concatenates the segments' stores.
