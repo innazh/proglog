@@ -1,160 +1,162 @@
 package log
 
-import (
-	"context"
-	"sync"
+/*REMOVED: now Raft handles the replication, so we don't need this object anymore*/
 
-	api "github.com/innazh/proglog/api/v1"
+// import (
+// 	"context"
+// 	"sync"
 
-	"go.uber.org/zap"
-	"google.golang.org/grpc"
-)
+// 	api "github.com/innazh/proglog/api/v1"
 
-/*
-	Replicator is responsible for replicating the data from the existing servers in the cluster to the newly joined server.
+// 	"go.uber.org/zap"
+// 	"google.golang.org/grpc"
+// )
 
-Once the server joins the cluster, replicator connects to it with the gRPC client
-and runs a loop that consumes from the discovered server and produces to the current one (newly joined) server.
-Implements discovery.Handler interface
-*/
-type Replicator struct {
-	DialOptions []grpc.DialOption
-	LocalServer api.LogClient
+// /*
+// 	Replicator is responsible for replicating the data from the existing servers in the cluster to the newly joined server.
 
-	logger *zap.Logger
+// Once the server joins the cluster, replicator connects to it with the gRPC client
+// and runs a loop that consumes from the discovered server and produces to the current one (newly joined) server.
+// Implements discovery.Handler interface
+// */
+// type Replicator struct {
+// 	DialOptions []grpc.DialOption
+// 	LocalServer api.LogClient
 
-	mu      sync.Mutex
-	servers map[string]chan struct{}
-	closed  bool
-	close   chan struct{}
-}
+// 	logger *zap.Logger
 
-// init initiates Replicator's channels and log
-func (r *Replicator) init() {
-	if r.logger == nil {
-		r.logger = zap.L().Named("replicator")
-	}
-	if r.servers == nil {
-		r.servers = make(map[string]chan struct{})
-	}
-	if r.close == nil {
-		r.close = make(chan struct{})
-	}
-}
+// 	mu      sync.Mutex
+// 	servers map[string]chan struct{}
+// 	closed  bool
+// 	close   chan struct{}
+// }
 
-// Join is called when the node with name joins the cluster.
-// It's added to the list of servers to replicate and kicks off the replication process in a go routine
-func (r *Replicator) Join(name, addr string) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+// // init initiates Replicator's channels and log
+// func (r *Replicator) init() {
+// 	if r.logger == nil {
+// 		r.logger = zap.L().Named("replicator")
+// 	}
+// 	if r.servers == nil {
+// 		r.servers = make(map[string]chan struct{})
+// 	}
+// 	if r.close == nil {
+// 		r.close = make(chan struct{})
+// 	}
+// }
 
-	r.init()
+// // Join is called when the node with name joins the cluster.
+// // It's added to the list of servers to replicate and kicks off the replication process in a go routine
+// func (r *Replicator) Join(name, addr string) error {
+// 	r.mu.Lock()
+// 	defer r.mu.Unlock()
 
-	if r.closed {
-		return nil
-	}
+// 	r.init()
 
-	if _, ok := r.servers[name]; ok { //check if the server is already replicating
-		return nil
-	}
-	r.servers[name] = make(chan struct{})
+// 	if r.closed {
+// 		return nil
+// 	}
 
-	go r.replicate(addr, r.servers[name])
+// 	if _, ok := r.servers[name]; ok { //check if the server is already replicating
+// 		return nil
+// 	}
+// 	r.servers[name] = make(chan struct{})
 
-	return nil
-}
+// 	go r.replicate(addr, r.servers[name])
 
-// Leave is called when the node with name leaves the cluster, so we close the chan and delete it from the server list
-func (r *Replicator) Leave(name string) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+// 	return nil
+// }
 
-	r.init()
+// // Leave is called when the node with name leaves the cluster, so we close the chan and delete it from the server list
+// func (r *Replicator) Leave(name string) error {
+// 	r.mu.Lock()
+// 	defer r.mu.Unlock()
 
-	if _, ok := r.servers[name]; !ok {
-		return nil
-	}
+// 	r.init()
 
-	close(r.servers[name]) //this signals to the receiver in the replicate goroutine to stop replicating that server
-	delete(r.servers, name)
+// 	if _, ok := r.servers[name]; !ok {
+// 		return nil
+// 	}
 
-	return nil
-}
+// 	close(r.servers[name]) //this signals to the receiver in the replicate goroutine to stop replicating that server
+// 	delete(r.servers, name)
 
-// replicate sets up a grpc client for reading addr
-func (r *Replicator) replicate(addr string, leave chan struct{}) {
-	cc, err := grpc.NewClient(addr, r.DialOptions...)
-	if err != nil {
-		r.logError(err, "failed to dial", addr)
-		return
-	}
-	defer cc.Close()
+// 	return nil
+// }
 
-	client := api.NewLogClient(cc)
+// // replicate sets up a grpc client for reading addr
+// func (r *Replicator) replicate(addr string, leave chan struct{}) {
+// 	cc, err := grpc.NewClient(addr, r.DialOptions...)
+// 	if err != nil {
+// 		r.logError(err, "failed to dial", addr)
+// 		return
+// 	}
+// 	defer cc.Close()
 
-	ctx := context.Background()
-	stream, err := client.ConsumeStream(ctx,
-		&api.ConsumeRequest{
-			Offset: 0,
-		},
-	)
-	if err != nil {
-		r.logError(err, "failed to consume", addr)
-		return
-	}
+// 	client := api.NewLogClient(cc)
 
-	records := make(chan *api.Record)
-	go func() {
-		for {
-			recv, err := stream.Recv()
-			if err != nil {
-				r.logError(err, "failed to receive", addr)
-				return
-			}
-			records <- recv.Record
-		}
-	}()
+// 	ctx := context.Background()
+// 	stream, err := client.ConsumeStream(ctx,
+// 		&api.ConsumeRequest{
+// 			Offset: 0,
+// 		},
+// 	)
+// 	if err != nil {
+// 		r.logError(err, "failed to consume", addr)
+// 		return
+// 	}
 
-	for {
-		select {
-		case <-r.close:
-			return
-		case <-leave:
-			return
-		case record := <-records:
-			_, err = r.LocalServer.Produce(ctx,
-				&api.ProduceRequest{
-					Record: record,
-				},
-			)
-			if err != nil {
-				r.logError(err, "failed to produce", addr)
-				return
-			}
-		}
-	}
-}
+// 	records := make(chan *api.Record)
+// 	go func() {
+// 		for {
+// 			recv, err := stream.Recv()
+// 			if err != nil {
+// 				r.logError(err, "failed to receive", addr)
+// 				return
+// 			}
+// 			records <- recv.Record
+// 		}
+// 	}()
 
-// Close closes the replicator
-func (r *Replicator) Close() error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+// 	for {
+// 		select {
+// 		case <-r.close:
+// 			return
+// 		case <-leave:
+// 			return
+// 		case record := <-records:
+// 			_, err = r.LocalServer.Produce(ctx,
+// 				&api.ProduceRequest{
+// 					Record: record,
+// 				},
+// 			)
+// 			if err != nil {
+// 				r.logError(err, "failed to produce", addr)
+// 				return
+// 			}
+// 		}
+// 	}
+// }
 
-	r.init()
+// // Close closes the replicator
+// func (r *Replicator) Close() error {
+// 	r.mu.Lock()
+// 	defer r.mu.Unlock()
 
-	if r.closed {
-		return nil
-	}
+// 	r.init()
 
-	r.closed = true
-	close(r.close)
-	return nil
-}
+// 	if r.closed {
+// 		return nil
+// 	}
 
-func (r *Replicator) logError(err error, msg, addr string) {
-	r.logger.Error(
-		msg,
-		zap.String("addr", addr),
-		zap.Error(err),
-	)
-}
+// 	r.closed = true
+// 	close(r.close)
+// 	return nil
+// }
+
+// func (r *Replicator) logError(err error, msg, addr string) {
+// 	r.logger.Error(
+// 		msg,
+// 		zap.String("addr", addr),
+// 		zap.Error(err),
+// 	)
+// }
