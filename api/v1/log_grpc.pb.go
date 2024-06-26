@@ -31,7 +31,6 @@ const (
 type LogClient interface {
 	Produce(ctx context.Context, in *ProduceRequest, opts ...grpc.CallOption) (*ProduceResponse, error)
 	Consume(ctx context.Context, in *ConsumeRequest, opts ...grpc.CallOption) (*ConsumeResponse, error)
-	// rpc ConsumeStream(stream ConsumeRequest) returns (stream ConsumeResponse) {} //server-side stream sent back to client
 	ConsumeStream(ctx context.Context, in *ConsumeRequest, opts ...grpc.CallOption) (Log_ConsumeStreamClient, error)
 	ProduceStream(ctx context.Context, opts ...grpc.CallOption) (Log_ProduceStreamClient, error)
 }
@@ -131,7 +130,6 @@ func (x *logProduceStreamClient) Recv() (*ProduceResponse, error) {
 type LogServer interface {
 	Produce(context.Context, *ProduceRequest) (*ProduceResponse, error)
 	Consume(context.Context, *ConsumeRequest) (*ConsumeResponse, error)
-	// rpc ConsumeStream(stream ConsumeRequest) returns (stream ConsumeResponse) {} //server-side stream sent back to client
 	ConsumeStream(*ConsumeRequest, Log_ConsumeStreamServer) error
 	ProduceStream(Log_ProduceStreamServer) error
 	mustEmbedUnimplementedLogServer()
