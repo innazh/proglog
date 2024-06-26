@@ -12,6 +12,7 @@ import (
 	"github.com/travisjeffery/go-dynaport"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/status"
 
 	api "github.com/innazh/proglog/api/v1"
 	"github.com/innazh/proglog/internal/agent"
@@ -59,6 +60,7 @@ func TestAgent(t *testing.T) {
 
 		agent, err := agent.NewAgent(agent.Config{
 			NodeName:        fmt.Sprintf("%d", i),
+			Bootstrap:       i == 0,
 			StartJoinAddrs:  startJoinAddrs,
 			BindAddr:        bindAddr,
 			RPCPort:         rpcPort,
@@ -74,13 +76,13 @@ func TestAgent(t *testing.T) {
 	}
 	defer func() {
 		for _, agent := range agents {
-			err := agent.Shutdown()
-			require.NoError(t, err)
+			_ = agent.Shutdown()
 			require.NoError(t,
 				os.RemoveAll(agent.Config.DataDir),
 			)
 		}
 	}()
+	// wait until agents have joined the cluster
 	time.Sleep(3 * time.Second)
 
 	leaderClient := client(t, agents[0], peerTLSConfig)
@@ -102,6 +104,7 @@ func TestAgent(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, consumeResponse.Record.Value, []byte("foo"))
 
+	// wait until replication has finished
 	time.Sleep(3 * time.Second)
 
 	followerClient := client(t, agents[1], peerTLSConfig)
@@ -114,24 +117,20 @@ func TestAgent(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, consumeResponse.Record.Value, []byte("foo"))
 
-	// consumeResponse, err = leaderClient.Consume(
-	// 	context.Background(),
-	// 	&api.ConsumeRequest{
-	// 		Offset: produceResponse.Offset + 1,
-	// 	},
-	// )
-	// require.Nil(t, consumeResponse)
-	// require.Error(t, err)
-	// got := status.Code(err)
-	// want := codes.OutOfRange
-	// require.Equal(t, got, want)
+	consumeResponse, err = leaderClient.Consume(
+		context.Background(),
+		&api.ConsumeRequest{
+			Offset: produceResponse.Offset + 1,
+		},
+	)
+	require.Nil(t, consumeResponse)
+	require.Error(t, err)
+	got := status.Code(err)
+	want := status.Code(api.ErrOffsetOutOfRange{}.GRPCStatus().Err())
+	require.Equal(t, got, want)
 }
 
-func client(
-	t *testing.T,
-	agent *agent.Agent,
-	tlsConfig *tls.Config,
-) api.LogClient {
+func client(t *testing.T, agent *agent.Agent, tlsConfig *tls.Config) api.LogClient {
 	tlsCreds := credentials.NewTLS(tlsConfig)
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(tlsCreds)}
 	rpcAddr, err := agent.Config.RPCAddr()

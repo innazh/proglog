@@ -82,6 +82,12 @@ Pull-based replication - periodically poll the data source to check if there's n
 Push-based replication - the data source pushes the data to its replicas
 
 
+### The Raft Consensus Algorithm
+https://raft.github.io/
+Raft is typically used for leader-election capability as well as replication. 
+Consensus is a fundamental problem in fault-tolerant distributed systems, suince a number of different services need to agree on values/state. Consensus algorithm ensures that all servers agree on the order of log entries/operations.
+The recommended sizes for a cluster are 3 (to handle 1 failure) and 5 (to handle 2 failures)
+
 ## The order of building / operations in this project:
 ### Chapter 1:
 1. We defined the model of a Log and access methods. 
@@ -129,5 +135,13 @@ learning opportunity: can write a protobuf extensions/plugins
 5. Build replication (implements the handler)
 6. Build an Agent that orchestrates and sets up the entire service instance, visual representation of the service is in the img below
 7. Test that sets up a cluster with 3 nodes, and verifies that the other servers will replicate the record we write to one of them
-Current replication implementation's problem: the servers replicate each other in a cycle. So server A will replicate server B's record, Server B will replicate server A, and server C will replicate server A and B, and server A and B will replicate server's C....
+Current replication implementation's problem: the servers replicate each other in a cycle, making it an infinite replication.
 ![visual representation of some objects](agent_enc.png)
+### Chapter 8: Coordinating services with Consensus
+1. Get hashicorp's raft
+2. Create a DistributedLog that consists of Raft, Log, LogStore, and Config
+3. Extend our Config struct to include a RaftConf struct
+4. Write methods to init Raft and boostrap the cluster
+5. Write DistributedLog's API, and implement all interfaces required by Raft
+6. Integrate our discovery layer with Raft (Impl discovery.Handler's interface for DistributedLog)
+7. Setup Multiplex run multiple services on one port
