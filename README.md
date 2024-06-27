@@ -74,11 +74,15 @@ It can be a good practice to connect the logs to an event streamning platofrm li
 
 ### Service discovery notes:
 For clients to reach a server, once we have more than one instance, we put a load balancer in front of it. The load balancers knows the address of each node, and its status. It redirects the client to the correct intance. It's fine to use them but it has its own trade offs like being a SPOF, introducing new cost, maintenance, and possibly latency. 
+
 For server-to-server communication, or for the internal services to comminicate, we don't really need a trust boundary since the communication is internal. We still, however, need to discover other intances and services in the system to talk to. Service discovery keeps track of the server instances, their IP, ports, their health, and deregesters them if they go offline/updates their status.
+
 Using service-discovery service transfers the burden from you to the users, which is honestly not a big deal if that's done for an in-org service.
 Now, however, it's possible to embed the service discovery into your own service.
 This is useful, so that once a new node goes online, it can replicate the data from the other nodes, whcih makes the service more resilient.
+
 Pull-based replication - periodically poll the data source to check if there's new data to consume (good in log and msg systems when consumers and work loads can differ e.g. one runs continuously, the other - every 24h)
+
 Push-based replication - the data source pushes the data to its replicas
 
 ### Load balancing notes:
