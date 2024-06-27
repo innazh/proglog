@@ -9,6 +9,7 @@ service Log {
     rpc Consume(ConsumeRequest) returns (ConsumeResponse) {}
     rpc ConsumeStream(ConsumeRequest) returns (stream ConsumeResponse) {} //server-side stream sent back to client
     rpc ProduceStream(stream ProduceRequest) returns (stream ProduceResponse) {} //bidirectional steraming: both client and server send a seq. of msgs
+    rpc GetServers(GetServersRequest) returns (GetServersResponse) {} //this is the endpoint resolvers will call to get clister's servers
 }
 
 message Record {
@@ -32,4 +33,18 @@ message ConsumeRequest{
 
 message ConsumeResponse{
     Record record = 2;
+}
+
+// Server contains the information of an address to clients can connect to, and if its a leader. 
+// We redirect produce calls to the leaders and consume calls to the followers.
+message Server {
+    string id = 1;
+    string rpc_addr = 2;
+    bool is_leader = 3;
+}
+
+message GetServersRequest{}
+
+message GetServersResponse {
+    repeated Server servers = 1;
 }

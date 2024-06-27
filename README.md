@@ -81,6 +81,20 @@ This is useful, so that once a new node goes online, it can replicate the data f
 Pull-based replication - periodically poll the data source to check if there's new data to consume (good in log and msg systems when consumers and work loads can differ e.g. one runs continuously, the other - every 24h)
 Push-based replication - the data source pushes the data to its replicas
 
+### Load balancing notes:
+Strategies:
+- Server proxying (most common): the client sends its requessts to a load balancer that either knows the servers by querying a service register or by encapsulating a 
+    service registry. It proxies the requests to the back-end services.
+- External load balancing (operational burden(?) + costs):
+    the client calls an external load-balancing service that knows the servers and tells the client what address to query.
+- Client-side balancing (when you trust the clients, e.g. for internal use):
+    the client takes on the responsibility of querying the service registry to learn about servers and picks a server to send the call to.
+gRPC balances the calls using a DNS resolver(default) and round-robin algorithm.
+Round-robin works well when all servers are performing the same type of work equally. Doesn't work well for the leader-followers architecture. Also doesn't work well with globally distruibuted service, as we'd want to connect the clients to the instances located closer to them. Lastly, doesn't work well in case you want to direct the request to the server with, say, the lowest number of queued requests (trying to optimize for latency).
+
+If we wanted to use a diff alforithm, we could always write our own resolver (discovers servers) and picker(manages directing produce calls to the leader and balancing consumes across the followers).
+
+Pickers handle the RPC balancing logic. They pick a server from the servers discovered by the Resolver to handle each RPC. Pickers can route client calls based on information about the call, client, and server. 
 
 ### The Raft Consensus Algorithm
 https://raft.github.io/
@@ -145,3 +159,8 @@ Current replication implementation's problem: the servers replicate each other i
 5. Write DistributedLog's API, and implement all interfaces required by Raft
 6. Integrate our discovery layer with Raft (Impl discovery.Handler's interface for DistributedLog)
 7. Setup Multiplex run multiple services on one port
+### Chapter 9:  Discover services and Load Balance
+1. Add a GetServers() endpoint that clients can call get servers' information (this is basically our server-attached service registry)
+2. Code loadbalance.Resolver (implements grpc's resolver & builder interfaces), register it, and write a test
+3. Code loadbalance.Picker and impl the tests
+4. Upd the client in our agent test to use our resolver, add the wait for replication there

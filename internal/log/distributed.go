@@ -17,7 +17,7 @@ import (
 	raftboltdb "github.com/hashicorp/raft-boltdb"
 )
 
-// DistributedLog will have the same API as Log to make them interchangeable. Also implements discovery.Handler
+// DistributedLog will have the same API as Log to make them interchangeable. Implements discovery.Handler, server.GetServerer, server.CommitLog
 type DistributedLog struct {
 	config Config
 	log    *Log
@@ -253,6 +253,23 @@ func (l *DistributedLog) Close() error {
 		return err
 	}
 	return l.log.Close()
+}
+
+// GetServers exposes Raft's server data
+func (l *DistributedLog) GetServers() ([]*api.Server, error) {
+	future := l.raft.GetConfiguration()
+	if err := future.Error(); err != nil {
+		return nil, err
+	}
+	var servers []*api.Server
+	for _, server := range future.Configuration().Servers {
+		servers = append(servers, &api.Server{
+			Id:       string(server.ID),
+			RpcAddr:  string(server.Address),
+			IsLeader: l.raft.Leader() == server.Address,
+		})
+	}
+	return servers, nil
 }
 
 // Finite-State Machine definition:

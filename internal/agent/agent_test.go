@@ -17,6 +17,7 @@ import (
 	api "github.com/innazh/proglog/api/v1"
 	"github.com/innazh/proglog/internal/agent"
 	"github.com/innazh/proglog/internal/config"
+	"github.com/innazh/proglog/internal/loadbalance"
 )
 
 func TestAgent(t *testing.T) {
@@ -95,6 +96,10 @@ func TestAgent(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
+
+	//wait for replication to complete
+	time.Sleep(3 * time.Second)
+
 	consumeResponse, err := leaderClient.Consume(
 		context.Background(),
 		&api.ConsumeRequest{
@@ -136,7 +141,8 @@ func client(t *testing.T, agent *agent.Agent, tlsConfig *tls.Config) api.LogClie
 	rpcAddr, err := agent.Config.RPCAddr()
 	require.NoError(t, err)
 
-	conn, err := grpc.NewClient(rpcAddr, opts...)
+	//our url scheme like proglog:/// so that grpc knows to use our resolver
+	conn, err := grpc.NewClient(fmt.Sprintf("%s:///%s", loadbalance.Name, rpcAddr), opts...)
 	require.NoError(t, err)
 
 	client := api.NewLogClient(conn)
