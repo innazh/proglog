@@ -81,17 +81,16 @@ Using service-discovery service transfers the burden from you to the users, whic
 Now, however, it's possible to embed the service discovery into your own service.
 This is useful, so that once a new node goes online, it can replicate the data from the other nodes, whcih makes the service more resilient.
 
-Pull-based replication - periodically poll the data source to check if there's new data to consume (good in log and msg systems when consumers and work loads can differ e.g. one runs continuously, the other - every 24h)
-
-Push-based replication - the data source pushes the data to its replicas
+<b>Pull-based replication</b> - periodically poll the data source to check if there's new data to consume (good in log and msg systems when consumers and work loads can differ e.g. one runs continuously, the other - every 24h).
+<b>Push-based replication</b> - the data source pushes the data to its replicas.
 
 ### Load balancing notes:
 Strategies:
-- Server proxying (most common): the client sends its requessts to a load balancer that either knows the servers by querying a service register or by encapsulating a 
+- <b>Server proxying (most common)</b>: the client sends its requessts to a load balancer that either knows the servers by querying a service register or by encapsulating a 
     service registry. It proxies the requests to the back-end services.
-- External load balancing (operational burden(?) + costs):
+- <b>External load balancing (operational burden(?) + costs)</b>:
     the client calls an external load-balancing service that knows the servers and tells the client what address to query.
-- Client-side balancing (when you trust the clients, e.g. for internal use):
+- <b>Client-side balancing (when you trust the clients, e.g. for internal use)</b>:
     the client takes on the responsibility of querying the service registry to learn about servers and picks a server to send the call to.
 gRPC balances the calls using a DNS resolver(default) and round-robin algorithm.
 Round-robin works well when all servers are performing the same type of work equally. Doesn't work well for the leader-followers architecture. Also doesn't work well with globally distruibuted service, as we'd want to connect the clients to the instances located closer to them. Lastly, doesn't work well in case you want to direct the request to the server with, say, the lowest number of queued requests (trying to optimize for latency).
