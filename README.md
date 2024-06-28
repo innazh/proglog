@@ -99,6 +99,30 @@ If we wanted to use a diff alforithm, we could always write our own resolver (di
 
 Pickers handle the RPC balancing logic. They pick a server from the servers discovered by the Resolver to handle each RPC. Pickers can route client calls based on information about the call, client, and server. 
 
+### Kubernetes notes:
+Kubernetes is an open source otchestration system for automating deployment, scalingm and operating services running in containers.
+It has a REST API. You can provide it with an 'end-goal' state and it'll figure out how to get to that state from the current one.
+<b>Pods</b> - smallest deployable unit in K8s. All containers (processes) running in a pod share the same network namespace, IP address, and the same 
+interprocess communication (IPC) namesapce, same volumes. Pods are logical hosts.
+<b>Nodes</b> - physical hosts (may run multiple pods).
+Kubernetes is extendable (can create custom resources and controllers).
+<b>Controllers</b> - control loops that watch the state of the resources and make changes where needed. Kubernetes is made up of many controllers.
+kubectl is a common way of interacting with Kybernetes.
+Kind (K8s in Docker) - allows to run local k8s clusters using Docker containers as nodes.
+// kind create cluster
+// kubectl cluster-info
+// kubectl cluster-info dump
+// kind load docker-image github.com/innazh/proglog:0.0.1
+
+### Helm notes:
+Helm is a package manager for K8s that enables you to distribute and install services in K8s. 
+Packages == <i>charts</i>. Think "npm for kubernetes". It defines all resources required to run a service in a k8s cluster.
+Just like npm, Helm makes it easier for others to run your application.
+A <i>release</i> - an instance of running a chart. It's like a 'process'.
+Repositories are used to share charts. You can add repos to install pacakges.
+// helm repo add x https://...
+// helm install x x
+
 ### The Raft Consensus Algorithm
 https://raft.github.io/
 Raft is typically used for leader-election capability as well as replication. 
@@ -167,3 +191,9 @@ Current replication implementation's problem: the servers replicate each other i
 2. Code loadbalance.Resolver (implements grpc's resolver & builder interfaces), register it, and write a test
 3. Code loadbalance.Picker and impl the tests
 4. Upd the client in our agent test to use our resolver, add the wait for replication there
+### Chapter 10: Deploy with Kubernetes
+1. Instal k8s & kind, get a cluster running
+2. Write a CLI interface that can run our program using cobra, viper
+3. Dockerfile, makefile cmd to build it
+4. Load the container into locally running Kind cluster
+5. Create a helm package for easier deploy

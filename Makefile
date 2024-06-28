@@ -47,3 +47,8 @@ test: $(CONFIG_PATH)/policy.csv $(CONFIG_PATH)/model.conf
 .PHONY: test-debug
 test-debug:
 	cd internal/server && go test -v -debug=true
+
+TAG ?= 0.0.1
+
+build-docker:
+	docker build -t github.com/innazh/proglog:$(TAG) .
