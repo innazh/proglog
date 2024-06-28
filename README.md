@@ -113,6 +113,11 @@ Kind (K8s in Docker) - allows to run local k8s clusters using Docker containers 
 // kubectl cluster-info
 // kubectl cluster-info dump
 // kind load docker-image github.com/innazh/proglog:0.0.1
+<b>Services</b> - exposes an app as a network service. In definition, we need to specify what Pods the service applies to and how to access the Pods.
+ - ClusterIP - default service type. The service is only reachable within the K8s cluster, has an internal cluster IP.
+ - NodePort - the service is available outside the cluster. Service is exposed on each node's IP on a static port.
+ - LoadBalancer - exposes the service externally using a cloud provider's load balancer. Auto creates Cluster & Node IP services behind the scenes.
+ - ExternalName - allows to alias a DNS name.
 
 ### Helm notes:
 Helm is a package manager for K8s that enables you to distribute and install services in K8s. 
@@ -197,3 +202,4 @@ Current replication implementation's problem: the servers replicate each other i
 3. Dockerfile, makefile cmd to build it
 4. Load the container into locally running Kind cluster
 5. Create a helm package for easier deploy
+6. Deploy our package locally!
